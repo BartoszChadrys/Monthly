@@ -39,6 +39,7 @@ struct DayEntry: TimelineEntry {
 }
 
 struct MonthlyWidgetEntryView : View {
+    @Environment(\.showsWidgetContainerBackground) var isShowingBackground
     var entry: DayEntry
     var config: MonthConfig
     
@@ -56,12 +57,17 @@ struct MonthlyWidgetEntryView : View {
                     .font(.title3)
                     .fontWeight(.bold)
                     .minimumScaleFactor(0.6)
-                    .foregroundStyle(config.weekdayTextColor.opacity(0.6))
+                    .foregroundStyle(isShowingBackground ? config.weekdayTextColor.opacity(0.6) : .white)
                 Spacer()
             }
+            .id(entry.date)
+            .transition(.push(from: .trailing))
+            .animation(.bouncy, value: entry.date)
+            
             Text(entry.date.dayFormatted)
                 .font(.system(size: 80, weight: .heavy))
-                .foregroundStyle(config.dayTextColor.opacity(0.8))
+                .foregroundStyle(isShowingBackground ? config.dayTextColor.opacity(0.8) : .white)
+                .contentTransition(.numericText())
         }
         .containerBackground(config.backgroundColor.gradient, for: .widget)
     }
@@ -89,8 +95,10 @@ struct MonthlyWidget: Widget {
 #Preview(as: .systemSmall) {
     MonthlyWidget()
 } timeline: {
-    let dateComponents = DateComponents(calendar: Calendar.current, year: 2024, month: 12, day: 24)
-    DayEntry(date: Calendar.current.date(from: dateComponents)!)
+    let firstDate = DateComponents(calendar: Calendar.current, year: 2024, month: 12, day: 24)
+    let secondDate = DateComponents(calendar: Calendar.current, year: 2024, month: 12, day: 31)
+    DayEntry(date: Calendar.current.date(from: firstDate)!)
+    DayEntry(date: Calendar.current.date(from: secondDate)!)
 }
 
 extension Date {
