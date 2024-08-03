@@ -8,24 +8,26 @@
 import WidgetKit
 import SwiftUI
 
-struct Provider: TimelineProvider {
+struct Provider: IntentTimelineProvider {
     func placeholder(in context: Context) -> DayEntry {
-        DayEntry(date: Date())
+        DayEntry(date: Date(), showFunFont: false)
     }
-
-    func getSnapshot(in context: Context, completion: @escaping (DayEntry) -> ()) {
-        let entry = DayEntry(date: Date())
+    
+    func getSnapshot(for configuration: ChangeFontIntent, in context: Context, completion: @escaping (DayEntry) -> Void) {
+        let entry = DayEntry(date: Date(), showFunFont: false)
         completion(entry)
     }
-
-    func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
+    
+    func getTimeline(for configuration: ChangeFontIntent, in context: Context, completion: @escaping (Timeline<DayEntry>) -> Void) {
         var entries: [DayEntry] = []
-
+        
+        let showFunFont = configuration.funFont == 1
+        
         let currentDate = Date()
         for dayOffset in 0 ..< 7 {
             let entryDate = Calendar.current.date(byAdding: .day, value: dayOffset, to: currentDate)!
             let startOfDate = Calendar.current.startOfDay(for: entryDate)
-            let entry = DayEntry(date: startOfDate)
+            let entry = DayEntry(date: startOfDate, showFunFont: showFunFont)
             entries.append(entry)
         }
 
@@ -36,12 +38,14 @@ struct Provider: TimelineProvider {
 
 struct DayEntry: TimelineEntry {
     let date: Date
+    let showFunFont: Bool
 }
 
 struct MonthlyWidgetEntryView : View {
     @Environment(\.showsWidgetContainerBackground) var isShowingBackground
     var entry: DayEntry
     var config: MonthConfig
+    let funFontName = "Chalkduster"
     
     init(entry: DayEntry) {
         self.entry = entry
@@ -54,7 +58,7 @@ struct MonthlyWidgetEntryView : View {
                 Text(config.emojiText)
                     .font(.title)
                 Text(entry.date.weekFormatted)
-                    .font(.title3)
+                    .font(entry.showFunFont ? .custom(funFontName, size: 24) : .title3)
                     .fontWeight(.bold)
                     .minimumScaleFactor(0.6)
                     .foregroundStyle(isShowingBackground ? config.weekdayTextColor.opacity(0.6) : .white)
@@ -65,7 +69,7 @@ struct MonthlyWidgetEntryView : View {
             .animation(.bouncy, value: entry.date)
             
             Text(entry.date.dayFormatted)
-                .font(.system(size: 80, weight: .heavy))
+                .font(entry.showFunFont ? .custom(funFontName, size: 80) : .system(size: 80, weight: .heavy))
                 .foregroundStyle(isShowingBackground ? config.dayTextColor.opacity(0.8) : .white)
                 .contentTransition(.numericText())
         }
@@ -77,7 +81,8 @@ struct MonthlyWidget: Widget {
     let kind: String = "MonthlyWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: Provider()) { entry in
+        
+        IntentConfiguration(kind: kind, intent: ChangeFontIntent.self, provider: Provider()) { entry in
             if #available(iOS 17.0, *) {
                 MonthlyWidgetEntryView(entry: entry)
             } else {
@@ -95,10 +100,10 @@ struct MonthlyWidget: Widget {
 #Preview(as: .systemSmall) {
     MonthlyWidget()
 } timeline: {
-    let firstDate = DateComponents(calendar: Calendar.current, year: 2024, month: 12, day: 24)
-    let secondDate = DateComponents(calendar: Calendar.current, year: 2024, month: 12, day: 31)
-    DayEntry(date: Calendar.current.date(from: firstDate)!)
-    DayEntry(date: Calendar.current.date(from: secondDate)!)
+    let firstDate = DateComponents(calendar: Calendar.current, year: 2024, month: 5, day: 24)
+    let secondDate = DateComponents(calendar: Calendar.current, year: 2024, month: 6, day: 10)
+    DayEntry(date: Calendar.current.date(from: firstDate)!, showFunFont: false)
+    DayEntry(date: Calendar.current.date(from: secondDate)!, showFunFont: false)
 }
 
 extension Date {
